@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --font-heading: 'Cormorant Garamond', serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  --color-background: hsl(40 60% 97%);
+  --color-foreground: hsl(0 0% 11%);
+  --color-card: hsl(40 50% 98%);
+  --color-card-foreground: hsl(0 0% 11%);
+  --color-popover: hsl(40 60% 97%);
+  --color-popover-foreground: hsl(0 0% 11%);
+  --color-primary: hsl(40 55% 50%);
+  --color-primary-foreground: hsl(40 60% 97%);
+  --color-secondary: hsl(30 30% 90%);
+  --color-secondary-foreground: hsl(0 0% 11%);
+  --color-muted: hsl(35 25% 93%);
+  --color-muted-foreground: hsl(0 0% 40%);
+  --color-accent: hsl(40 65% 72%);
+  --color-accent-foreground: hsl(0 0% 11%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(0 0% 98%);
+  --color-border: hsl(35 25% 87%);
+  --color-input: hsl(35 25% 87%);
+  --color-ring: hsl(40 55% 50%);
+
+  --radius: 0.375rem;
+}
+
+@layer base {
+  :root {
+    --font-heading: 'Cormorant Garamond', serif;
+    --font-body: 'DM Sans', sans-serif;
+
+    --background: 40 60% 97%;
+    --foreground: 0 0% 11%;
+    --card: 40 50% 98%;
+    --card-foreground: 0 0% 11%;
+    --popover: 40 60% 97%;
+    --popover-foreground: 0 0% 11%;
+    --primary: 40 55% 50%;
+    --primary-foreground: 40 60% 97%;
+    --secondary: 30 30% 90%;
+    --secondary-foreground: 0 0% 11%;
+    --muted: 35 25% 93%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 40 65% 72%;
+    --accent-foreground: 0 0% 11%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 35 25% 87%;
+    --input: 35 25% 87%;
+    --ring: 40 55% 50%;
+    --radius: 0.375rem;
+  }
+
+  .dark {
+    --background: 0 0% 7%;
+    --foreground: 40 30% 92%;
+    --card: 0 0% 10%;
+    --card-foreground: 40 30% 92%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 40 30% 92%;
+    --primary: 40 55% 50%;
+    --primary-foreground: 0 0% 7%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 40 30% 92%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 40 15% 60%;
+    --accent: 40 45% 35%;
+    --accent-foreground: 40 30% 92%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 40 55% 50%;
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-body);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+}
+
+/* Gold shimmer skeleton */
+@keyframes goldShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.gold-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(40 30% 90%) 25%,
+    hsl(40 55% 80%) 50%,
+    hsl(40 30% 90%) 75%
+  );
+  background-size: 200% 100%;
+  animation: goldShimmer 1.5s ease-in-out infinite;
+}

@@ -29,12 +29,34 @@ const navItems = [
   { label: "Settings", path: "/admin/settings", icon: Settings },
 ];
 
+function normalizePath(pathname) {
+  const cleaned = pathname.replace(/\/+$/, "");
+  return cleaned || "/";
+}
+
+function isNavItemActive(pathname, itemPath) {
+  if (itemPath === "/admin") {
+    return pathname === "/admin";
+  }
+
+  if (itemPath === "/admin/inventory") {
+    return (
+      pathname === "/admin/inventory" ||
+      /^\/admin\/inventory\/[^/]+\/edit$/.test(pathname)
+    );
+  }
+
+  return pathname === itemPath;
+}
+
 export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
   const { settings } = useStoreSettings();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const pathname = normalizePath(location.pathname);
 
   const storeName =
     settings?.store_name || settings?.storeName || "House of Riwaze";
@@ -59,6 +81,7 @@ export default function AdminLayout() {
       }).length;
     },
     initialData: 0,
+    staleTime: 1000 * 60,
   });
 
   const handleLogout = () => {
@@ -85,9 +108,7 @@ export default function AdminLayout() {
         <div className="flex items-start justify-between gap-3 border-b border-border p-5">
           <div>
             <h2 className="font-heading text-xl font-semibold">{storeName}</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Admin Panel
-            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">Admin Panel</p>
           </div>
 
           <Button
@@ -102,11 +123,7 @@ export default function AdminLayout() {
 
         <nav className="flex-1 space-y-1 p-3">
           {navItems.map((item) => {
-            const isActive =
-              item.path === "/admin"
-                ? location.pathname === "/admin"
-                : location.pathname.startsWith(item.path);
-
+            const isActive = isNavItemActive(pathname, item.path);
             const Icon = item.icon;
 
             return (

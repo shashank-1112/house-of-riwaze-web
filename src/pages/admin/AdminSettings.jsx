@@ -1,49 +1,15 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 
-import { productApi } from "@/api/productApi";
-import { useMetalRates } from "@/hooks/useMetalRates";
+import { storeSettingsApi } from "@/api/storeSettingsApi";
 
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 
-import {
-  Search,
-  Plus,
-  Pencil,
-  Trash2,
-  Download,
-  RefreshCw,
-} from "lucide-react";
-
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Save, RefreshCw } from "lucide-react";
 
 const CATEGORIES = [
   "Rings",
@@ -57,559 +23,396 @@ const CATEGORIES = [
   "Other",
 ];
 
-const METALS = ["Gold", "Silver", "Diamond", "Platinum", "Mixed"];
+const DEFAULT_SETTINGS = {
+  store_name: "House of Riwaze",
+  tagline: "Timeless Elegance, Crafted for You",
+  logo_url:
+    "https://raw.githubusercontent.com/shashank-1112/images/8779686a25f689be3ef63da813eba218637a1da4/favicon.png",
+  address: "",
+  whatsapp: "",
+  email: "",
+  instagram: "",
+  facebook: "",
+  default_making_charges: {},
+};
 
-function getProductValue(product, snakeKey, camelKey, fallback = "") {
-  return product?.[snakeKey] ?? product?.[camelKey] ?? fallback;
+const cardClass = "rounded-2xl border-border/80 bg-card shadow-sm";
+const cardHeaderClass = "border-b border-border/60 px-5 py-4";
+const cardTitleClass = "font-heading text-xl font-semibold";
+const cardContentClass = "px-5 py-5";
+const fieldClass = "space-y-1.5";
+const inputClass = "h-11";
+
+function normalizeSettings(settings) {
+  return {
+    store_name:
+      settings?.store_name ?? settings?.storeName ?? DEFAULT_SETTINGS.store_name,
+
+    tagline:
+      settings?.tagline ?? DEFAULT_SETTINGS.tagline,
+
+    logo_url:
+      settings?.logo_url ?? settings?.logoUrl ?? DEFAULT_SETTINGS.logo_url,
+
+    address:
+      settings?.address ?? DEFAULT_SETTINGS.address,
+
+    whatsapp:
+      settings?.whatsapp ?? DEFAULT_SETTINGS.whatsapp,
+
+    email:
+      settings?.email ?? DEFAULT_SETTINGS.email,
+
+    instagram:
+      settings?.instagram ?? DEFAULT_SETTINGS.instagram,
+
+    facebook:
+      settings?.facebook ?? DEFAULT_SETTINGS.facebook,
+
+    default_making_charges:
+      settings?.default_making_charges ??
+      settings?.defaultMakingCharges ??
+      DEFAULT_SETTINGS.default_making_charges,
+  };
 }
 
-function getProductNumber(product, snakeKey, camelKey, fallback = 0) {
-  const value = product?.[snakeKey] ?? product?.[camelKey] ?? fallback;
-  const numberValue = Number(value);
-
-  return Number.isFinite(numberValue) ? numberValue : fallback;
+function toBackendSettings(form) {
+  return {
+    storeName: form.store_name || "House of Riwaze",
+    tagline: form.tagline || "",
+    logoUrl: form.logo_url || "",
+    address: form.address || "",
+    whatsapp: form.whatsapp || "",
+    email: form.email || "",
+    instagram: form.instagram || "",
+    facebook: form.facebook || "",
+    defaultMakingCharges: Object.fromEntries(
+      Object.entries(form.default_making_charges || {}).map(([key, value]) => [
+        key,
+        Number(value || 0),
+      ])
+    ),
+  };
 }
 
-export default function Inventory() {
-  const { calculatePrice } = useMetalRates();
+export default function AdminSettings() {
   const { toast } = useToast();
 
-  const [products, setProducts] = useState([]);
+  const [form, setForm] = useState(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [search, setSearch] = useState("");
-  const [filterCategory, setFilterCategory] = useState("all");
-  const [filterMetal, setFilterMetal] = useState("all");
-  const [filterStock, setFilterStock] = useState("all");
-  const [filterVisibility, setFilterVisibility] = useState("all");
-
-  const loadProducts = async ({ silent = false } = {}) => {
-    if (silent) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
+  const loadSettings = async () => {
+    setIsLoading(true);
 
     try {
-      const data = await productApi.getAdminProducts({
-        limit: 500,
-      });
-
-      const sortedProducts = [...(data || [])].sort((a, b) => {
-        const aDate = new Date(a.created_date || a.createdDate || 0);
-        const bDate = new Date(b.created_date || b.createdDate || 0);
-
-        return bDate - aDate;
-      });
-
-      setProducts(sortedProducts);
+      const settings = await storeSettingsApi.getAdminSettings();
+      setForm(normalizeSettings(settings));
     } catch (error) {
       toast({
-        title: "Failed to load inventory",
+        title: "Failed to load settings",
         description: error.message,
         variant: "destructive",
       });
 
-      setProducts([]);
+      setForm(DEFAULT_SETTINGS);
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    loadProducts();
+    loadSettings();
   }, []);
 
-  const filtered = useMemo(() => {
-    const searchValue = search.trim().toLowerCase();
-
-    return products.filter((product) => {
-      const name = product.name || "";
-      const sku = product.sku || "";
-      const category = product.category || "";
-      const metalType = getProductValue(product, "metal_type", "metalType");
-      const visibility = product.visibility || "";
-
-      const stock = getProductNumber(
-        product,
-        "stock_quantity",
-        "stockQuantity"
-      );
-
-      const minStock = getProductNumber(
-        product,
-        "min_stock_threshold",
-        "minStockThreshold",
-        5
-      );
-
-      if (
-        searchValue &&
-        !name.toLowerCase().includes(searchValue) &&
-        !sku.toLowerCase().includes(searchValue)
-      ) {
-        return false;
-      }
-
-      if (filterCategory !== "all" && category !== filterCategory) {
-        return false;
-      }
-
-      if (filterMetal !== "all" && metalType !== filterMetal) {
-        return false;
-      }
-
-      if (filterVisibility !== "all" && visibility !== filterVisibility) {
-        return false;
-      }
-
-      if (filterStock === "in_stock" && stock <= 0) {
-        return false;
-      }
-
-      if (filterStock === "low" && (stock <= 0 || stock > minStock)) {
-        return false;
-      }
-
-      if (filterStock === "out" && stock > 0) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [
-    products,
-    search,
-    filterCategory,
-    filterMetal,
-    filterStock,
-    filterVisibility,
-  ]);
-
-  const hasActiveFilters =
-    search.trim() ||
-    filterCategory !== "all" ||
-    filterMetal !== "all" ||
-    filterStock !== "all" ||
-    filterVisibility !== "all";
-
-  const getStockStatus = (product) => {
-    const stock = getProductNumber(
-      product,
-      "stock_quantity",
-      "stockQuantity"
-    );
-
-    const minStock = getProductNumber(
-      product,
-      "min_stock_threshold",
-      "minStockThreshold",
-      5
-    );
-
-    if (stock <= 0) {
-      return {
-        label: "Out of Stock",
-        className: "text-destructive bg-destructive/10",
-      };
-    }
-
-    if (stock <= minStock) {
-      return {
-        label: "Low Stock",
-        className: "text-amber-700 bg-amber-100",
-      };
-    }
-
-    return {
-      label: "In Stock",
-      className: "text-green-700 bg-green-100",
-    };
+  const update = (field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
-  const handleDelete = async (id, name) => {
+  const updateCharge = (category, value) => {
+    setForm((prev) => ({
+      ...prev,
+      default_making_charges: {
+        ...prev.default_making_charges,
+        [category]: value === "" ? "" : Number(value || 0),
+      },
+    }));
+  };
+
+  const validate = () => {
+    if (!form.store_name.trim()) {
+      toast({
+        title: "Store name required",
+        description: "Please enter your store name.",
+        variant: "destructive",
+      });
+
+      return false;
+    }
+
+    if (form.email && !form.email.includes("@")) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSave = async () => {
+    if (!validate()) return;
+
+    setIsSaving(true);
+
     try {
-      await productApi.deleteProduct(id);
-      await loadProducts({ silent: true });
+      const saved = await storeSettingsApi.updateAdminSettings(
+        toBackendSettings(form)
+      );
+
+      setForm(normalizeSettings(saved));
 
       toast({
-        title: "Product deleted",
-        description: `${name} was removed from inventory.`,
+        title: "Settings saved",
+        description: "Store settings were updated successfully.",
       });
     } catch (error) {
       toast({
-        title: "Delete failed",
+        title: "Save failed",
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const exportCSV = () => {
-    const headers = [
-      "Name",
-      "SKU",
-      "Category",
-      "Metal",
-      "Purity",
-      "Weight(g)",
-      "Stock",
-      "Visibility",
-      "Price(₹)",
-    ];
-
-    const rows = filtered.map((product) => [
-      product.name,
-      product.sku,
-      product.category,
-      getProductValue(product, "metal_type", "metalType"),
-      product.purity,
-      getProductNumber(product, "net_weight", "netWeight"),
-      getProductNumber(product, "stock_quantity", "stockQuantity"),
-      product.visibility,
-      calculatePrice(product),
-    ]);
-
-    const escapeCell = (value) => {
-      const stringValue = String(value ?? "");
-      return `"${stringValue.replace(/"/g, '""')}"`;
-    };
-
-    const csv = [headers, ...rows]
-      .map((row) => row.map(escapeCell).join(","))
-      .join("\n");
-
-    const blob = new Blob([csv], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-
-    anchor.href = url;
-    anchor.download = "house-of-riwaze-inventory.csv";
-    anchor.click();
-
-    URL.revokeObjectURL(url);
-  };
-
-  const clearFilters = () => {
-    setSearch("");
-    setFilterCategory("all");
-    setFilterMetal("all");
-    setFilterStock("all");
-    setFilterVisibility("all");
-  };
-
   return (
-    <div>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mx-auto w-full max-w-5xl px-4 pb-24 sm:px-6 lg:px-8">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-heading text-2xl font-semibold sm:text-3xl">
-            Inventory
-          </h1>
+          <h1 className="font-heading text-3xl font-semibold">Settings</h1>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            {isLoading ? "Loading products..." : `${filtered.length} products`}
+            Configure your store details, contact information, and default
+            pricing rules.
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() => loadProducts({ silent: true })}
-            disabled={isLoading || isRefreshing}
-            className="gap-2"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
-
-          <Button
-            variant="outline"
-            onClick={exportCSV}
-            disabled={isLoading || filtered.length === 0}
-            className="gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
-
-          <Link to="/admin/inventory/add">
-            <Button className="gap-2 bg-primary">
-              <Plus className="h-4 w-4" />
-              Add Product
-            </Button>
-          </Link>
-        </div>
+        <Button
+          variant="outline"
+          onClick={loadSettings}
+          disabled={isLoading || isSaving}
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
       </div>
 
-      <div className="mb-4 rounded-xl border border-border bg-card p-4 shadow-sm">
-        <div className="flex flex-col gap-2 lg:flex-row">
-          <div className="relative min-w-[220px] flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <div className="space-y-5">
+        <Card className={cardClass}>
+          <CardHeader className={cardHeaderClass}>
+            <CardTitle className={cardTitleClass}>Store Information</CardTitle>
+          </CardHeader>
 
-            <Input
-              placeholder="Search name or SKU..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <CardContent className={`${cardContentClass} space-y-5`}>
+            <div className="grid gap-x-5 gap-y-4 md:grid-cols-2">
+              <div className={fieldClass}>
+                <Label>Store Name</Label>
 
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-full lg:w-40">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
+                <Input
+                  value={form.store_name}
+                  onChange={(event) => update("store_name", event.target.value)}
+                  className={inputClass}
+                  disabled={isLoading}
+                />
+              </div>
 
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
+              <div className={fieldClass}>
+                <Label>Tagline</Label>
 
+                <Input
+                  value={form.tagline}
+                  onChange={(event) => update("tagline", event.target.value)}
+                  placeholder="Timeless Elegance, Crafted for You"
+                  className={inputClass}
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border/70 bg-background/60 p-4">
+              <Label>Logo URL</Label>
+
+              <div className="mt-3 flex flex-wrap items-center gap-4">
+                {form.logo_url ? (
+                  <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-border bg-card">
+                    <img
+                      src={form.logo_url}
+                      alt="Logo"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-xl border border-dashed border-border bg-card text-xs text-muted-foreground">
+                    No logo
+                  </div>
+                )}
+
+                <div className="min-w-[240px] flex-1">
+                  <Input
+                    value={form.logo_url}
+                    onChange={(event) => update("logo_url", event.target.value)}
+                    placeholder="https://example.com/logo.png"
+                    className={inputClass}
+                    disabled={isLoading}
+                  />
+
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Use a hosted image URL. Do not store base64 images in DB for
+                    production.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={cardClass}>
+          <CardHeader className={cardHeaderClass}>
+            <CardTitle className={cardTitleClass}>Contact Information</CardTitle>
+          </CardHeader>
+
+          <CardContent className="grid gap-x-5 gap-y-4 px-5 py-5 md:grid-cols-2">
+            <div className={`${fieldClass} md:col-span-2`}>
+              <Label>Address</Label>
+
+              <Textarea
+                value={form.address}
+                onChange={(event) => update("address", event.target.value)}
+                rows={3}
+                className="min-h-24"
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className={fieldClass}>
+              <Label>WhatsApp Number</Label>
+
+              <Input
+                value={form.whatsapp}
+                onChange={(event) => update("whatsapp", event.target.value)}
+                placeholder="919876543210"
+                className={inputClass}
+                disabled={isLoading}
+              />
+
+              <p className="text-xs text-muted-foreground">
+                Use country code without + sign.
+              </p>
+            </div>
+
+            <div className={fieldClass}>
+              <Label>Email</Label>
+
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(event) => update("email", event.target.value)}
+                placeholder="contact@example.com"
+                className={inputClass}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className={fieldClass}>
+              <Label>Instagram URL</Label>
+
+              <Input
+                value={form.instagram}
+                onChange={(event) => update("instagram", event.target.value)}
+                placeholder="https://instagram.com/..."
+                className={inputClass}
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className={fieldClass}>
+              <Label>Facebook URL</Label>
+
+              <Input
+                value={form.facebook}
+                onChange={(event) => update("facebook", event.target.value)}
+                placeholder="https://facebook.com/..."
+                className={inputClass}
+                disabled={isLoading}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className={cardClass}>
+          <CardHeader className={cardHeaderClass}>
+            <div>
+              <CardTitle className={cardTitleClass}>
+                Default Making Charges
+              </CardTitle>
+
+              <p className="mt-1 text-sm text-muted-foreground">
+                These values auto-fill while creating new products.
+              </p>
+            </div>
+          </CardHeader>
+
+          <CardContent className={cardContentClass}>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {CATEGORIES.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
+                <div
+                  key={category}
+                  className="rounded-xl border border-border/70 bg-background/60 p-3"
+                >
+                  <Label className="text-xs">{category}</Label>
+
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">₹</span>
+
+                    <Input
+                      type="number"
+                      step="1"
+                      value={form.default_making_charges[category] ?? ""}
+                      onChange={(event) =>
+                        updateCharge(category, event.target.value)
+                      }
+                      placeholder="0"
+                      className={inputClass}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
               ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={filterMetal} onValueChange={setFilterMetal}>
-            <SelectTrigger className="w-full lg:w-36">
-              <SelectValue placeholder="Metal" />
-            </SelectTrigger>
-
-            <SelectContent>
-              <SelectItem value="all">All Metals</SelectItem>
-
-              {METALS.map((metal) => (
-                <SelectItem key={metal} value={metal}>
-                  {metal}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={filterStock} onValueChange={setFilterStock}>
-            <SelectTrigger className="w-full lg:w-36">
-              <SelectValue placeholder="Stock" />
-            </SelectTrigger>
-
-            <SelectContent>
-              <SelectItem value="all">All Stock</SelectItem>
-              <SelectItem value="in_stock">In Stock</SelectItem>
-              <SelectItem value="low">Low Stock</SelectItem>
-              <SelectItem value="out">Out of Stock</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={filterVisibility} onValueChange={setFilterVisibility}>
-            <SelectTrigger className="w-full lg:w-36">
-              <SelectValue placeholder="Visibility" />
-            </SelectTrigger>
-
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="Published">Published</SelectItem>
-              <SelectItem value="Draft">Draft</SelectItem>
-              <SelectItem value="Hidden">Hidden</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button
-            variant="ghost"
-            onClick={clearFilters}
-            disabled={!hasActiveFilters}
-            className="disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Clear
-          </Button>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="w-12"></TableHead>
-              <TableHead>Product</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead>Metal / Purity</TableHead>
-              <TableHead className="text-right">Weight</TableHead>
-              <TableHead className="text-right">Price</TableHead>
-              <TableHead className="text-center">Stock</TableHead>
-              <TableHead className="text-center">Status</TableHead>
-              <TableHead className="text-center">Visibility</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {isLoading ? (
-              Array(5)
-                .fill(0)
-                .map((_, rowIndex) => (
-                  <TableRow key={rowIndex}>
-                    {Array(10)
-                      .fill(0)
-                      .map((_, cellIndex) => (
-                        <TableCell key={cellIndex}>
-                          <div className="h-4 w-full rounded gold-shimmer" />
-                        </TableCell>
-                      ))}
-                  </TableRow>
-                ))
-            ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={10}
-                  className="py-12 text-center text-muted-foreground"
-                >
-                  No products found
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((product) => {
-                const status = getStockStatus(product);
-                const metalType = getProductValue(
-                  product,
-                  "metal_type",
-                  "metalType"
-                );
-                const netWeight = getProductNumber(
-                  product,
-                  "net_weight",
-                  "netWeight"
-                );
-                const stockQuantity = getProductNumber(
-                  product,
-                  "stock_quantity",
-                  "stockQuantity"
-                );
-
-                return (
-                  <TableRow key={product.id} className="hover:bg-muted/30">
-                    <TableCell>
-                      <div className="h-10 w-10 overflow-hidden rounded-sm bg-muted">
-                        {product.images?.[0] ? (
-                          <img
-                            src={product.images[0]}
-                            alt={product.name}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                            {product.name?.[0]}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-
-                    <TableCell>
-                      <p className="text-sm font-medium">{product.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {product.category}
-                      </p>
-                    </TableCell>
-
-                    <TableCell className="font-mono text-xs">
-                      {product.sku}
-                    </TableCell>
-
-                    <TableCell>
-                      <p className="text-sm">{metalType}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {product.purity}
-                      </p>
-                    </TableCell>
-
-                    <TableCell className="text-right text-sm">
-                      {netWeight}g
-                    </TableCell>
-
-                    <TableCell className="text-right text-sm font-semibold">
-                      ₹
-                      {Number(calculatePrice(product) || 0).toLocaleString(
-                        "en-IN"
-                      )}
-                    </TableCell>
-
-                    <TableCell className="text-center text-sm">
-                      {stockQuantity}
-                    </TableCell>
-
-                    <TableCell className="text-center">
-                      <Badge className={`text-[10px] ${status.className}`}>
-                        {status.label}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="text-[10px]">
-                        {product.visibility}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link to={`/admin/inventory/${product.id}/edit`}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                        </Link>
-
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </AlertDialogTrigger>
-
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Delete {product.name}?
-                              </AlertDialogTitle>
-
-                              <AlertDialogDescription>
-                                This will remove the product from your backend
-                                inventory. You can add it again later if needed.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-
-                              <AlertDialogAction
-                                onClick={() =>
-                                  handleDelete(product.id, product.name)
-                                }
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
+      <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-border bg-background/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="mx-auto flex max-w-5xl justify-end gap-3">
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || isLoading}
+            className="h-11 gap-2 bg-primary px-6"
+          >
+            <Save className="h-4 w-4" />
+            {isSaving ? "Saving..." : "Save Settings"}
+          </Button>
+        </div>
       </div>
     </div>
   );

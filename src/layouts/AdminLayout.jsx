@@ -39,9 +39,9 @@ export default function AdminLayout() {
   //   initialData: 0,
   // });
 
-  const handleLogout = () => {
-    base44.auth.logout('/');
-  };
+  // const handleLogout = () => {
+  //   base44.auth.logout('/');
+  // };
 
   return (
     <div className="min-h-screen bg-muted/30 flex">

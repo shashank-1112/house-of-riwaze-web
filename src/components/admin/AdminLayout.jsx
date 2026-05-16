@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
-import { useStoreSettings } from '@/hooks/useStoreSettings';
+import React, { useState } from "react";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+
+import { useStoreSettings } from "@/hooks/useStoreSettings";
+import { productApi } from "@/api/productApi";
+
 import {
   LayoutDashboard,
   Package,
@@ -14,69 +16,117 @@ import {
   ExternalLink,
   AlertTriangle,
   LogOut,
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+} from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-  { label: 'Inventory', path: '/admin/inventory', icon: Package },
-  { label: 'Add Product', path: '/admin/inventory/add', icon: Plus },
-  { label: 'Reports', path: '/admin/reports', icon: BarChart3 },
-  { label: 'Settings', path: '/admin/settings', icon: Settings },
+  { label: "Dashboard", path: "/admin", icon: LayoutDashboard },
+  { label: "Inventory", path: "/admin/inventory", icon: Package },
+  { label: "Add Product", path: "/admin/inventory/add", icon: Plus },
+  { label: "Reports", path: "/admin/reports", icon: BarChart3 },
+  { label: "Settings", path: "/admin/settings", icon: Settings },
 ];
 
 export default function AdminLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+
   const { settings } = useStoreSettings();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const storeName =
+    settings?.store_name || settings?.storeName || "House of Riwaze";
+
   const { data: lowStockCount = 0 } = useQuery({
-    queryKey: ['low-stock-count'],
+    queryKey: ["low-stock-count"],
     queryFn: async () => {
-      const products = await base44.entities.Product.list('-created_date', 500);
-      return products.filter(p => p.stock_quantity <= (p.min_stock_threshold || 5) && p.stock_quantity > 0).length;
+      const products = await productApi.getAdminProducts({
+        limit: 500,
+      });
+
+      return products.filter((product) => {
+        const stock = Number(
+          product.stock_quantity ?? product.stockQuantity ?? 0
+        );
+
+        const threshold = Number(
+          product.min_stock_threshold ?? product.minStockThreshold ?? 5
+        );
+
+        return stock > 0 && stock <= threshold;
+      }).length;
     },
     initialData: 0,
   });
 
   const handleLogout = () => {
-    base44.auth.logout('/');
+    // Temporary until admin auth is added.
+    navigate("/");
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 flex">
-      {/* Sidebar Overlay */}
+    <div className="flex min-h-screen bg-muted/30">
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <button
+          type="button"
+          aria-label="Close sidebar"
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
-      {/* Sidebar */}
-      <aside className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-card border-r border-border z-50 flex flex-col transition-transform lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-5 border-b border-border">
-          <h2 className="font-heading text-xl font-semibold">{settings.store_name}</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Admin Panel</p>
+      <aside
+        className={`fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-border bg-card transition-transform lg:sticky lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-border p-5">
+          <div>
+            <h2 className="font-heading text-xl font-semibold">{storeName}</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Admin Panel
+            </p>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 space-y-1 p-3">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive =
+              item.path === "/admin"
+                ? location.pathname === "/admin"
+                : location.pathname.startsWith(item.path);
+
+            const Icon = item.icon;
+
             return (
               <Link
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 }`}
               >
-                <item.icon className="w-4 h-4" />
+                <Icon className="h-4 w-4" />
+
                 {item.label}
-                {item.label === 'Inventory' && lowStockCount > 0 && (
-                  <Badge className="ml-auto bg-destructive text-destructive-foreground text-[10px] px-1.5 h-5">
-                    <AlertTriangle className="w-3 h-3 mr-0.5" />
+
+                {item.label === "Inventory" && lowStockCount > 0 && (
+                  <Badge className="ml-auto h-5 bg-destructive px-1.5 text-[10px] text-destructive-foreground">
+                    <AlertTriangle className="mr-0.5 h-3 w-3" />
                     {lowStockCount}
                   </Badge>
                 )}
@@ -85,32 +135,39 @@ export default function AdminLayout() {
           })}
         </nav>
 
-        <div className="p-3 border-t border-border space-y-1">
+        <div className="space-y-1 border-t border-border p-3">
           <Link
             to="/"
-            className="flex items-center gap-3 px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
-            <ExternalLink className="w-4 h-4" />
+            <ExternalLink className="h-4 w-4" />
             View Store
           </Link>
+
           <button
+            type="button"
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 text-sm text-muted-foreground hover:text-destructive transition-colors w-full"
+            className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:text-destructive"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="h-4 w-4" />
             Logout
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 min-w-0">
-        {/* Mobile Header */}
-        <div className="lg:hidden sticky top-0 z-30 bg-card border-b border-border px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
-            <Menu className="w-5 h-5" />
+      <div className="min-w-0 flex-1">
+        <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-card px-4 py-3 lg:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
           </Button>
-          <span className="font-heading text-lg font-semibold">{settings.store_name} Admin</span>
+
+          <span className="font-heading text-lg font-semibold">
+            {storeName} Admin
+          </span>
         </div>
 
         <div className="p-4 sm:p-6 lg:p-8">

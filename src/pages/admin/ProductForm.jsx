@@ -33,7 +33,20 @@ const CATEGORIES = [
   "Other",
 ];
 
-const METALS = ["Gold", "Silver", "Diamond", "Platinum", "Mixed"];
+const METALS = ["Gold", "Silver", "Platinum", "Mixed"];
+
+const JEWELLERY_TYPES = ["None", "Diamond Studded", "Gemstone Studded"];
+
+const METAL_COLORS = [
+  "None",
+  "Yellow Gold",
+  "Rose Gold",
+  "Green Gold",
+  "White Gold",
+  "Rhodium",
+];
+
+const ACCESSORY_TYPES = ["None", "Watch"];
 
 const PURITIES = [
   "18K",
@@ -68,6 +81,9 @@ function createEmptyForm() {
     sub_category: "",
 
     metal_type: "Gold",
+    jewellery_type: "None",
+    metal_color: "None",
+    accessory_type: "None",
     purity: "22K",
 
     gross_weight: "",
@@ -118,6 +134,18 @@ function normalizePayload(data) {
   return {
     ...data,
 
+    name: data.name.trim(),
+    sku: data.sku.trim(),
+
+    category: data.category || "Rings",
+    sub_category: data.sub_category?.trim() || "",
+
+    metal_type: data.metal_type || "Gold",
+    jewellery_type: data.jewellery_type || "None",
+    metal_color: data.metal_color || "None",
+    accessory_type: data.accessory_type || "None",
+    purity: data.purity || "N/A",
+
     gross_weight: parseFloat(data.gross_weight) || 0,
     net_weight: parseFloat(data.net_weight) || 0,
 
@@ -140,15 +168,24 @@ function normalizePayload(data) {
 
     stone_details: (data.stone_details || []).map((stone) => ({
       ...stone,
-      stone_type: stone.stone_type || "",
+      stone_type: stone.stone_type?.trim() || "",
       carat: parseFloat(stone.carat) || 0,
-      clarity: stone.clarity || "",
-      cut: stone.cut || "",
-      color: stone.color || "",
+      clarity: stone.clarity?.trim() || "",
+      cut: stone.cut?.trim() || "",
+      color: stone.color?.trim() || "",
       cost: parseFloat(stone.cost) || 0,
     })),
 
     images: Array.isArray(data.images) ? data.images : [],
+
+    description: data.description?.trim() || "",
+    tags: data.tags?.trim() || "",
+
+    visibility: data.visibility || "Published",
+    gender: data.gender || "Unisex",
+    occasion: data.occasion || "Any",
+
+    is_featured: Boolean(data.is_featured),
 
     try_on_enabled: Boolean(data.try_on_enabled),
     try_on_type: data.try_on_type || "ring",
@@ -220,6 +257,21 @@ export default function ProductForm() {
       ...createEmptyForm(),
       ...existingProduct,
 
+      jewellery_type:
+        existingProduct.jewellery_type ||
+        existingProduct.jewelleryType ||
+        "None",
+
+      metal_color:
+        existingProduct.metal_color ||
+        existingProduct.metalColor ||
+        "None",
+
+      accessory_type:
+        existingProduct.accessory_type ||
+        existingProduct.accessoryType ||
+        "None",
+
       gross_weight: existingProduct.gross_weight ?? "",
       net_weight: existingProduct.net_weight ?? "",
 
@@ -245,7 +297,12 @@ export default function ProductForm() {
   useEffect(() => {
     const defaultCharges = settings?.default_making_charges?.[form.category];
 
-    if (!isEdit && form.category && defaultCharges) {
+    if (
+      !isEdit &&
+      form.category &&
+      defaultCharges !== undefined &&
+      defaultCharges !== null
+    ) {
       setForm((prev) => ({
         ...prev,
         making_charges: defaultCharges,
@@ -265,6 +322,36 @@ export default function ProductForm() {
       toast({
         title: "Missing required fields",
         description: "Product name and SKU are required.",
+        variant: "destructive",
+      });
+
+      return false;
+    }
+
+    if (!form.category || !form.metal_type || !form.purity) {
+      toast({
+        title: "Missing product classification",
+        description: "Category, metal type and purity are required.",
+        variant: "destructive",
+      });
+
+      return false;
+    }
+
+    if (form.category === "Other" && !form.sub_category.trim()) {
+      toast({
+        title: "Sub-category required",
+        description: "Please enter a sub-category when category is Other.",
+        variant: "destructive",
+      });
+
+      return false;
+    }
+
+    if (!form.visibility || !form.gender || !form.occasion) {
+      toast({
+        title: "Missing product visibility details",
+        description: "Visibility, gender and occasion are required.",
         variant: "destructive",
       });
 
@@ -291,7 +378,7 @@ export default function ProductForm() {
         ? null
         : parseFloat(form.price_override);
 
-    if (!grossWeight || grossWeight <= 0) {
+    if (Number.isNaN(grossWeight) || grossWeight <= 0) {
       toast({
         title: "Invalid gross weight",
         description: "Gross weight must be greater than zero.",
@@ -301,10 +388,20 @@ export default function ProductForm() {
       return false;
     }
 
-    if (!netWeight || netWeight <= 0) {
+    if (Number.isNaN(netWeight) || netWeight <= 0) {
       toast({
         title: "Invalid net weight",
         description: "Net metal weight must be greater than zero.",
+        variant: "destructive",
+      });
+
+      return false;
+    }
+
+    if (netWeight > grossWeight) {
+      toast({
+        title: "Invalid weight values",
+        description: "Net metal weight cannot be greater than gross weight.",
         variant: "destructive",
       });
 
@@ -341,10 +438,92 @@ export default function ProductForm() {
       return false;
     }
 
-    if (priceOverride !== null && (Number.isNaN(priceOverride) || priceOverride < 0)) {
+    if (
+      priceOverride !== null &&
+      (Number.isNaN(priceOverride) || priceOverride < 0)
+    ) {
       toast({
         title: "Invalid price override",
         description: "Price override cannot be negative.",
+        variant: "destructive",
+      });
+
+      return false;
+    }
+
+    const hasInvalidStone = form.stone_details.some((stone, index) => {
+      const hasAnyStoneValue =
+        stone.stone_type ||
+        stone.carat ||
+        stone.clarity ||
+        stone.cut ||
+        stone.color ||
+        stone.cost;
+
+      if (!hasAnyStoneValue) return false;
+
+      const carat = parseFloat(stone.carat);
+      const cost = parseFloat(stone.cost);
+
+      if (!stone.stone_type?.trim()) {
+        toast({
+          title: `Stone ${index + 1}: Type required`,
+          description: "Please enter the stone type or remove the stone row.",
+          variant: "destructive",
+        });
+
+        return true;
+      }
+
+      if (
+        stone.carat !== "" &&
+        stone.carat !== null &&
+        stone.carat !== undefined &&
+        (Number.isNaN(carat) || carat < 0)
+      ) {
+        toast({
+          title: `Stone ${index + 1}: Invalid carat`,
+          description: "Stone carat cannot be negative.",
+          variant: "destructive",
+        });
+
+        return true;
+      }
+
+      if (
+        stone.cost !== "" &&
+        stone.cost !== null &&
+        stone.cost !== undefined &&
+        (Number.isNaN(cost) || cost < 0)
+      ) {
+        toast({
+          title: `Stone ${index + 1}: Invalid cost`,
+          description: "Stone cost cannot be negative.",
+          variant: "destructive",
+        });
+
+        return true;
+      }
+
+      return false;
+    });
+
+    if (hasInvalidStone) return false;
+
+    if (form.visibility === "Published" && form.images.length === 0) {
+      toast({
+        title: "Product image required",
+        description: "Published products should have at least one image.",
+        variant: "destructive",
+      });
+
+      return false;
+    }
+
+    if (form.visibility === "Published" && !form.description.trim()) {
+      toast({
+        title: "Description required",
+        description: "Published products should have a product description.",
         variant: "destructive",
       });
 
@@ -572,17 +751,19 @@ export default function ProductForm() {
             </div>
 
             <div className={fieldClass}>
-              <Label>Sub-category</Label>
+              <Label>Sub-category {form.category === "Other" ? "*" : ""}</Label>
               <Input
                 value={form.sub_category}
                 onChange={(event) => update("sub_category", event.target.value)}
-                placeholder="Optional"
+                placeholder={
+                  form.category === "Other" ? "Required for Other" : "Optional"
+                }
                 className={inputClass}
               />
             </div>
 
             <div className={fieldClass}>
-              <Label>Visibility</Label>
+              <Label>Visibility *</Label>
               <Select
                 value={form.visibility}
                 onValueChange={(value) => update("visibility", value)}
@@ -602,7 +783,7 @@ export default function ProductForm() {
             </div>
 
             <div className={fieldClass}>
-              <Label>Gender</Label>
+              <Label>Gender *</Label>
               <Select
                 value={form.gender}
                 onValueChange={(value) => update("gender", value)}
@@ -622,7 +803,7 @@ export default function ProductForm() {
             </div>
 
             <div className={fieldClass}>
-              <Label>Occasion</Label>
+              <Label>Occasion *</Label>
               <Select
                 value={form.occasion}
                 onValueChange={(value) => update("occasion", value)}
@@ -657,7 +838,7 @@ export default function ProductForm() {
           </CardContent>
         </Card>
 
-        <Card className={cardClass}>
+         <Card className={cardClass}>
           <CardHeader className={cardHeaderClass}>
             <CardTitle className={cardTitleClass}>Metal & Weight</CardTitle>
           </CardHeader>
@@ -726,6 +907,76 @@ export default function ProductForm() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className={cardClass}>
+          <CardHeader className={cardHeaderClass}>
+            <CardTitle className={cardTitleClass}>Product Attributes</CardTitle>
+          </CardHeader>
+
+          <CardContent className={cardGridClass}>
+            <div className={fieldClass}>
+              <Label>Jewellery Type</Label>
+              <Select
+                value={form.jewellery_type}
+                onValueChange={(value) => update("jewellery_type", value)}
+              >
+                <SelectTrigger className={selectTriggerClass}>
+                  <SelectValue />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {JEWELLERY_TYPES.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className={fieldClass}>
+              <Label>Metal Color</Label>
+              <Select
+                value={form.metal_color}
+                onValueChange={(value) => update("metal_color", value)}
+              >
+                <SelectTrigger className={selectTriggerClass}>
+                  <SelectValue />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {METAL_COLORS.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className={fieldClass}>
+              <Label>Accessories</Label>
+              <Select
+                value={form.accessory_type}
+                onValueChange={(value) => update("accessory_type", value)}
+              >
+                <SelectTrigger className={selectTriggerClass}>
+                  <SelectValue />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {ACCESSORY_TYPES.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+       
 
         <Card className={cardClass}>
           <CardHeader className={cardHeaderClass}>

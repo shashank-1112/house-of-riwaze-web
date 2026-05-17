@@ -44,6 +44,22 @@ function toFrontendProduct(product) {
     sub_category: product.subCategory ?? product.sub_category ?? "",
 
     metal_type: product.metalType ?? product.metal_type ?? "",
+
+    jewellery_type:
+      product.jewelleryType ??
+      product.jewellery_type ??
+      "None",
+
+    metal_color:
+      product.metalColor ??
+      product.metal_color ??
+      "None",
+
+    accessory_type:
+      product.accessoryType ??
+      product.accessory_type ??
+      "None",
+
     purity: product.purity,
 
     gross_weight: product.grossWeight ?? product.gross_weight ?? 0,
@@ -99,16 +115,33 @@ function toBackendProduct(product) {
     sku: product.sku,
 
     category: product.category,
-    subCategory: product.sub_category || "",
+    subCategory: product.sub_category ?? product.subCategory ?? "",
 
-    metalType: product.metal_type,
-    purity: product.purity,
+    metalType: product.metal_type ?? product.metalType ?? "Gold",
 
-    grossWeight: Number(product.gross_weight || 0),
-    netWeight: Number(product.net_weight || 0),
+    jewelleryType:
+      product.jewellery_type ??
+      product.jewelleryType ??
+      "None",
 
-    makingChargesType: product.making_charges_type || "per_gram",
-    makingCharges: Number(product.making_charges || 0),
+    metalColor:
+      product.metal_color ??
+      product.metalColor ??
+      "None",
+
+    accessoryType:
+      product.accessory_type ??
+      product.accessoryType ??
+      "None",
+
+    purity: product.purity ?? "22K",
+
+    grossWeight: Number(product.gross_weight ?? product.grossWeight ?? 0),
+    netWeight: Number(product.net_weight ?? product.netWeight ?? 0),
+
+    makingChargesType:
+      product.making_charges_type ?? product.makingChargesType ?? "per_gram",
+    makingCharges: Number(product.making_charges ?? product.makingCharges ?? 0),
 
     priceOverride:
       product.price_override === "" ||
@@ -117,36 +150,40 @@ function toBackendProduct(product) {
         ? null
         : Number(product.price_override),
 
-    stockQuantity: Number(product.stock_quantity || 0),
-    minStockThreshold: Number(product.min_stock_threshold || 5),
+    stockQuantity: Number(product.stock_quantity ?? product.stockQuantity ?? 0),
+    minStockThreshold: Number(
+      product.min_stock_threshold ?? product.minStockThreshold ?? 5
+    ),
 
-    images: product.images || [],
+    images: Array.isArray(product.images) ? product.images : [],
 
-    description: product.description || "",
-    tags: product.tags || "",
+    description: product.description ?? "",
+    tags: product.tags ?? "",
 
-    visibility: product.visibility || "Published",
-    gender: product.gender || "Unisex",
-    occasion: product.occasion || "Any",
+    visibility: product.visibility ?? "Published",
+    gender: product.gender ?? "Unisex",
+    occasion: product.occasion ?? "Any",
 
-    isFeatured: Boolean(product.is_featured),
+    isFeatured: Boolean(product.is_featured ?? product.isFeatured ?? false),
 
-    stoneDetails: (product.stone_details || []).map((stone) => ({
-      stoneType: stone.stone_type || "",
-      carat: Number(stone.carat || 0),
-      clarity: stone.clarity || "",
-      cut: stone.cut || "",
-      color: stone.color || "",
-      cost: Number(stone.cost || 0),
-    })),
+    stoneDetails: Array.isArray(product.stone_details)
+      ? product.stone_details.map((stone) => ({
+          stoneType: stone.stone_type ?? stone.stoneType ?? "",
+          carat: Number(stone.carat ?? 0),
+          clarity: stone.clarity ?? "",
+          cut: stone.cut ?? "",
+          color: stone.color ?? "",
+          cost: Number(stone.cost ?? 0),
+        }))
+      : [],
 
-    tryOnEnabled: Boolean(product.try_on_enabled),
-    tryOnType: product.try_on_type || "ring",
-    tryOnAsset: product.try_on_asset || "",
-    tryOnScale: Number(product.try_on_scale || 1),
-    tryOnOffsetX: Number(product.try_on_offset_x || 0),
-    tryOnOffsetY: Number(product.try_on_offset_y || 0),
-    tryOnRotation: Number(product.try_on_rotation || 0),
+    tryOnEnabled: Boolean(product.try_on_enabled ?? product.tryOnEnabled),
+    tryOnType: product.try_on_type ?? product.tryOnType ?? "ring",
+    tryOnAsset: product.try_on_asset ?? product.tryOnAsset ?? "",
+    tryOnScale: Number(product.try_on_scale ?? product.tryOnScale ?? 1),
+    tryOnOffsetX: Number(product.try_on_offset_x ?? product.tryOnOffsetX ?? 0),
+    tryOnOffsetY: Number(product.try_on_offset_y ?? product.tryOnOffsetY ?? 0),
+    tryOnRotation: Number(product.try_on_rotation ?? product.tryOnRotation ?? 0),
   };
 }
 
@@ -155,7 +192,12 @@ export const productApi = {
     const searchParams = new URLSearchParams();
 
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "" && value !== "all") {
+      if (
+        value !== undefined &&
+        value !== null &&
+        value !== "" &&
+        value !== "all"
+      ) {
         searchParams.set(key, value);
       }
     });
@@ -170,13 +212,20 @@ export const productApi = {
     const searchParams = new URLSearchParams();
 
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== "" && value !== "all") {
+      if (
+        value !== undefined &&
+        value !== null &&
+        value !== "" &&
+        value !== "all"
+      ) {
         searchParams.set(key, value);
       }
     });
 
     const query = searchParams.toString();
-    const data = await request(`/api/admin/products${query ? `?${query}` : ""}`);
+    const data = await request(
+      `/api/admin/products${query ? `?${query}` : ""}`
+    );
 
     return data.map(toFrontendProduct);
   },

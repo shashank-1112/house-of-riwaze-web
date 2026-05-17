@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { productApi } from "@/api/productApi";
 import { useMetalRates } from "@/hooks/useMetalRates";
@@ -13,7 +14,6 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
 
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import ProductCard from "@/components/storefront/ProductCard";
@@ -28,32 +28,91 @@ const CATEGORIES = [
   "Pendants",
   "Chains",
   "Sets",
+  "Other",
 ];
 
-const METALS = ["Gold", "Silver", "Diamond", "Platinum", "Mixed"];
+const METALS = ["Gold", "Silver", "Platinum", "Mixed"];
+
+const JEWELLERY_TYPES = ["Diamond Studded", "Gemstone Studded"];
+
+const METAL_COLORS = [
+  "Yellow Gold",
+  "Rose Gold",
+  "Green Gold",
+  "White Gold",
+  "Rhodium",
+];
+
+const ACCESSORY_TYPES = ["Watch"];
+
 const PURITIES = ["18K", "22K", "24K", "925 Silver", "999 Silver", "Platinum"];
 const GENDERS = ["Men", "Women", "Unisex"];
 const OCCASIONS = ["Bridal", "Casual", "Festival", "Office", "Any"];
 
-const PRICE_MIN = 0;
-const PRICE_MAX = 1000000;
+function parsePrice(value) {
+  if (value === "" || value === null || value === undefined) {
+    return null;
+  }
+
+  const numberValue = Number(value);
+
+  return Number.isFinite(numberValue) && numberValue >= 0 ? numberValue : null;
+}
+
+function formatPrice(value) {
+  return `₹${Number(value || 0).toLocaleString("en-IN")}`;
+}
+
+function normalizeFilterValue(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function matchesFilter(productValue, selectedValue) {
+  if (!selectedValue || selectedValue === "all") {
+    return true;
+  }
+
+  return normalizeFilterValue(productValue) === normalizeFilterValue(selectedValue);
+}
 
 export default function Products() {
   const { calculatePrice } = useMetalRates();
-  const urlParams = new URLSearchParams(window.location.search);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const getParam = (key) => searchParams.get(key) || "all";
 
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState(urlParams.get("category") || "all");
-  const [metal, setMetal] = useState(urlParams.get("metal") || "all");
+  const [category, setCategory] = useState(getParam("category"));
+  const [metal, setMetal] = useState(getParam("metal"));
+  const [jewelleryType, setJewelleryType] = useState(getParam("jewelleryType"));
+  const [metalColor, setMetalColor] = useState(getParam("metalColor"));
+  const [accessoryType, setAccessoryType] = useState(getParam("accessoryType"));
   const [purity, setPurity] = useState("all");
   const [gender, setGender] = useState("all");
-  const [occasion, setOccasion] = useState(urlParams.get("occasion") || "all");
+  const [occasion, setOccasion] = useState(getParam("occasion"));
   const [sortBy, setSortBy] = useState("newest");
-  const [priceRange, setPriceRange] = useState([PRICE_MIN, PRICE_MAX]);
+
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+
   const [showFilters, setShowFilters] = useState(false);
+
+  const minPriceValue = parsePrice(minPrice);
+  const maxPriceValue = parsePrice(maxPrice);
+
+  useEffect(() => {
+    setCategory(getParam("category"));
+    setMetal(getParam("metal"));
+    setJewelleryType(getParam("jewelleryType"));
+    setMetalColor(getParam("metalColor"));
+    setAccessoryType(getParam("accessoryType"));
+    setOccasion(getParam("occasion"));
+  }, [searchParams]);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -85,8 +144,27 @@ export default function Products() {
     const result = products.filter((product) => {
       const productName = product.name || "";
       const sku = product.sku || "";
+
       const productCategory = product.category || "";
-      const productMetal = product.metal_type || product.metal || "";
+      const productMetal = product.metal_type || product.metalType || "";
+
+      const productJewelleryType =
+        product.jewellery_type ||
+        product.jewelleryType ||
+        product.jewelry_type ||
+        product.jewelryType ||
+        "";
+
+      const productMetalColor =
+        product.metal_color ||
+        product.metalColor ||
+        "";
+
+      const productAccessoryType =
+        product.accessory_type ||
+        product.accessoryType ||
+        "";
+
       const productPurity = product.purity || "";
       const productGender = product.gender || "";
       const productOccasion = product.occasion || "";
@@ -101,15 +179,19 @@ export default function Products() {
         return false;
       }
 
-      if (category !== "all" && productCategory !== category) return false;
-      if (metal !== "all" && productMetal !== metal) return false;
-      if (purity !== "all" && productPurity !== purity) return false;
-      if (gender !== "all" && productGender !== gender) return false;
-      if (occasion !== "all" && productOccasion !== occasion) return false;
+      if (!matchesFilter(productCategory, category)) return false;
+      if (!matchesFilter(productMetal, metal)) return false;
+      if (!matchesFilter(productJewelleryType, jewelleryType)) return false;
+      if (!matchesFilter(productMetalColor, metalColor)) return false;
+      if (!matchesFilter(productAccessoryType, accessoryType)) return false;
+      if (!matchesFilter(productPurity, purity)) return false;
+      if (!matchesFilter(productGender, gender)) return false;
+      if (!matchesFilter(productOccasion, occasion)) return false;
 
-      const price = calculatePrice(product);
+      const price = Number(calculatePrice(product) || 0);
 
-      if (price < priceRange[0] || price > priceRange[1]) return false;
+      if (minPriceValue !== null && price < minPriceValue) return false;
+      if (maxPriceValue !== null && price > maxPriceValue) return false;
 
       return true;
     });
@@ -142,37 +224,59 @@ export default function Products() {
     search,
     category,
     metal,
+    jewelleryType,
+    metalColor,
+    accessoryType,
     purity,
     gender,
     occasion,
     sortBy,
-    priceRange,
+    minPriceValue,
+    maxPriceValue,
     calculatePrice,
   ]);
 
-  const activeFilters = [
+  const dropdownFilterCount = [
     category,
     metal,
+    jewelleryType,
+    metalColor,
+    accessoryType,
     purity,
     gender,
     occasion,
   ].filter((filter) => filter !== "all").length;
 
-  const hasActiveFilters =
-    search.trim() ||
-    activeFilters > 0 ||
-    priceRange[0] !== PRICE_MIN ||
-    priceRange[1] !== PRICE_MAX;
+  const priceFilterCount = minPrice.trim() || maxPrice.trim() ? 1 : 0;
+  const activeFilters = dropdownFilterCount + priceFilterCount;
+  const hasActiveFilters = search.trim() || activeFilters > 0;
 
   const clearFilters = () => {
     setCategory("all");
     setMetal("all");
+    setJewelleryType("all");
+    setMetalColor("all");
+    setAccessoryType("all");
     setPurity("all");
     setGender("all");
     setOccasion("all");
-    setPriceRange([PRICE_MIN, PRICE_MAX]);
+    setMinPrice("");
+    setMaxPrice("");
     setSearch("");
+    setSearchParams({});
   };
+
+  const priceSummary =
+    minPriceValue !== null || maxPriceValue !== null
+      ? `${minPriceValue !== null ? formatPrice(minPriceValue) : "Any"} – ${
+          maxPriceValue !== null ? formatPrice(maxPriceValue) : "Any"
+        }`
+      : "Any price";
+
+  const hasInvalidPriceRange =
+    minPriceValue !== null &&
+    maxPriceValue !== null &&
+    minPriceValue > maxPriceValue;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
@@ -247,7 +351,7 @@ export default function Products() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger>
                 <SelectValue placeholder="Category" />
@@ -280,6 +384,54 @@ export default function Products() {
               </SelectContent>
             </Select>
 
+            <Select value={jewelleryType} onValueChange={setJewelleryType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Jewellery Type" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="all">All Jewellery Types</SelectItem>
+
+                {JEWELLERY_TYPES.map((item) => (
+                  <SelectItem key={item} value={item}>
+                    {item}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={metalColor} onValueChange={setMetalColor}>
+              <SelectTrigger>
+                <SelectValue placeholder="Metal Color" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="all">All Metal Colors</SelectItem>
+
+                {METAL_COLORS.map((item) => (
+                  <SelectItem key={item} value={item}>
+                    {item}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={accessoryType} onValueChange={setAccessoryType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Accessories" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="all">All Accessories</SelectItem>
+
+                {ACCESSORY_TYPES.map((item) => (
+                  <SelectItem key={item} value={item}>
+                    {item}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select value={purity} onValueChange={setPurity}>
               <SelectTrigger>
                 <SelectValue placeholder="Purity" />
@@ -302,7 +454,7 @@ export default function Products() {
               </SelectTrigger>
 
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="all">All Genders</SelectItem>
 
                 {GENDERS.map((item) => (
                   <SelectItem key={item} value={item}>
@@ -329,20 +481,66 @@ export default function Products() {
             </Select>
           </div>
 
-          <div>
-            <label className="mb-2 block text-xs text-muted-foreground">
-              Price Range: ₹{priceRange[0].toLocaleString("en-IN")} – ₹
-              {priceRange[1].toLocaleString("en-IN")}
-            </label>
+          <div className="rounded-xl border border-border/70 bg-background/60 p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <label className="text-sm font-medium">Price Range</label>
 
-            <Slider
-              min={PRICE_MIN}
-              max={PRICE_MAX}
-              step={5000}
-              value={priceRange}
-              onValueChange={setPriceRange}
-              className="w-full"
-            />
+              <span className="text-xs text-muted-foreground">
+                {priceSummary}
+              </span>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">
+                  Minimum Price
+                </label>
+
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    ₹
+                  </span>
+
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    value={minPrice}
+                    onChange={(event) => setMinPrice(event.target.value)}
+                    placeholder="No minimum"
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">
+                  Maximum Price
+                </label>
+
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    ₹
+                  </span>
+
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min="0"
+                    value={maxPrice}
+                    onChange={(event) => setMaxPrice(event.target.value)}
+                    placeholder="No maximum"
+                    className="pl-8"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {hasInvalidPriceRange && (
+              <p className="mt-3 text-xs text-destructive">
+                Minimum price should be less than maximum price.
+              </p>
+            )}
           </div>
         </div>
       )}

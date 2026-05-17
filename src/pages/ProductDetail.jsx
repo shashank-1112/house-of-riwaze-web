@@ -31,6 +31,10 @@ function getProductNumber(product, snakeKey, camelKey, fallback = 0) {
   return Number.isFinite(numberValue) ? numberValue : fallback;
 }
 
+function shouldShowAttribute(value) {
+  return value && value !== "None" && value !== "all";
+}
+
 function normalizeProduct(product) {
   if (!product) return null;
 
@@ -45,6 +49,25 @@ function normalizeProduct(product) {
     sub_category: getProductValue(product, "sub_category", "subCategory", ""),
 
     metal_type: getProductValue(product, "metal_type", "metalType", ""),
+
+    jewellery_type:
+      getProductValue(product, "jewellery_type", "jewelleryType", "") ||
+      getProductValue(product, "jewelry_type", "jewelryType", "None"),
+
+    metal_color: getProductValue(
+      product,
+      "metal_color",
+      "metalColor",
+      "None"
+    ),
+
+    accessory_type: getProductValue(
+      product,
+      "accessory_type",
+      "accessoryType",
+      "None"
+    ),
+
     purity: product.purity || "",
 
     gross_weight: getProductNumber(product, "gross_weight", "grossWeight", 0),
@@ -92,9 +115,7 @@ function normalizeProduct(product) {
     gender: product.gender || "Unisex",
     occasion: product.occasion || "Any",
 
-    is_featured: Boolean(
-      product.is_featured ?? product.isFeatured ?? false
-    ),
+    is_featured: Boolean(product.is_featured ?? product.isFeatured ?? false),
 
     stone_details: product.stone_details || product.stoneDetails || [],
 
@@ -247,12 +268,35 @@ export default function ProductDetail() {
       );
     });
 
+    const sameCategoryAndType = publishedProducts.filter((item) => {
+      return (
+        item.category === product.category &&
+        shouldShowAttribute(product.jewellery_type) &&
+        item.jewellery_type === product.jewellery_type
+      );
+    });
+
+    if (sameCategoryAndType.length > 0) {
+      return sameCategoryAndType.slice(0, 8);
+    }
+
     const sameCategory = publishedProducts.filter((item) => {
       return item.category === product.category;
     });
 
     if (sameCategory.length > 0) {
       return sameCategory.slice(0, 8);
+    }
+
+    const sameJewelleryType = publishedProducts.filter((item) => {
+      return (
+        shouldShowAttribute(product.jewellery_type) &&
+        item.jewellery_type === product.jewellery_type
+      );
+    });
+
+    if (sameJewelleryType.length > 0) {
+      return sameJewelleryType.slice(0, 8);
     }
 
     const sameMetal = publishedProducts.filter((item) => {
@@ -318,6 +362,10 @@ export default function ProductDetail() {
       )}?text=${encodeURIComponent(whatsappMsg)}`
     : null;
 
+  const relatedViewAllUrl = shouldShowAttribute(product.jewellery_type)
+    ? `/products?jewelleryType=${encodeURIComponent(product.jewellery_type)}`
+    : `/products?category=${encodeURIComponent(product.category)}`;
+
   const handleShare = async () => {
     if (navigator.share) {
       await navigator.share({
@@ -353,7 +401,7 @@ export default function ProductDetail() {
         Back to Collections
       </Link>
 
-      <div className="grid gap-8 md:grid-cols-2 sm:gap-12">
+      <div className="grid gap-8 sm:gap-12 md:grid-cols-2">
         <div>
           <div
             className="relative aspect-square cursor-crosshair overflow-hidden rounded-sm bg-muted"
@@ -419,7 +467,7 @@ export default function ProductDetail() {
         </div>
 
         <div>
-          <div className="mb-1 flex items-start gap-2">
+          <div className="mb-1 flex flex-wrap items-start gap-2">
             {product.metal_type && (
               <Badge
                 variant="secondary"
@@ -435,6 +483,33 @@ export default function ProductDetail() {
                 className="text-[10px] uppercase tracking-wider"
               >
                 {product.purity}
+              </Badge>
+            )}
+
+            {shouldShowAttribute(product.jewellery_type) && (
+              <Badge
+                variant="outline"
+                className="border-primary/30 bg-primary/5 text-[10px] uppercase tracking-wider text-primary"
+              >
+                {product.jewellery_type}
+              </Badge>
+            )}
+
+            {shouldShowAttribute(product.metal_color) && (
+              <Badge
+                variant="outline"
+                className="text-[10px] uppercase tracking-wider"
+              >
+                {product.metal_color}
+              </Badge>
+            )}
+
+            {shouldShowAttribute(product.accessory_type) && (
+              <Badge
+                variant="outline"
+                className="text-[10px] uppercase tracking-wider"
+              >
+                {product.accessory_type}
               </Badge>
             )}
           </div>
@@ -456,7 +531,7 @@ export default function ProductDetail() {
               Price Breakdown
             </h4>
 
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between gap-4 text-sm">
               <span>
                 Metal Cost ({product.net_weight}g × ₹
                 {metalRate.toLocaleString("en-IN")}/g)
@@ -464,13 +539,13 @@ export default function ProductDetail() {
               <span>₹{metalCost.toLocaleString("en-IN")}</span>
             </div>
 
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between gap-4 text-sm">
               <span>Making Charges</span>
               <span>₹{makingCost.toLocaleString("en-IN")}</span>
             </div>
 
             {stoneCost > 0 && (
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between gap-4 text-sm">
                 <span>Stone Cost</span>
                 <span>₹{stoneCost.toLocaleString("en-IN")}</span>
               </div>
@@ -478,37 +553,65 @@ export default function ProductDetail() {
 
             <Separator className="my-2" />
 
-            <div className="flex justify-between text-sm font-semibold">
+            <div className="flex justify-between gap-4 text-sm font-semibold">
               <span>Total MRP</span>
               <span>₹{Number(totalPrice || 0).toLocaleString("en-IN")}</span>
             </div>
           </div>
 
           <div className="mb-6 space-y-3 text-sm">
-            <div className="flex justify-between">
+            <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Category</span>
               <span>{product.category || "-"}</span>
             </div>
 
-            <div className="flex justify-between">
+            {product.sub_category && (
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Sub-category</span>
+                <span>{product.sub_category}</span>
+              </div>
+            )}
+
+            {shouldShowAttribute(product.jewellery_type) && (
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Jewellery Type</span>
+                <span>{product.jewellery_type}</span>
+              </div>
+            )}
+
+            {shouldShowAttribute(product.metal_color) && (
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Metal Color</span>
+                <span>{product.metal_color}</span>
+              </div>
+            )}
+
+            {shouldShowAttribute(product.accessory_type) && (
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Accessories</span>
+                <span>{product.accessory_type}</span>
+              </div>
+            )}
+
+            <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Gross Weight</span>
               <span>{product.gross_weight}g</span>
             </div>
 
-            <div className="flex justify-between">
+            <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Net Weight</span>
               <span>{product.net_weight}g</span>
             </div>
 
             {product.gender && product.gender !== "Unisex" && (
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">For</span>
                 <span>{product.gender}</span>
               </div>
             )}
 
             {product.occasion && product.occasion !== "Any" && (
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-4">
                 <span className="text-muted-foreground">Occasion</span>
                 <span>{product.occasion}</span>
               </div>
@@ -526,7 +629,7 @@ export default function ProductDetail() {
                   key={index}
                   className="mb-2 rounded-sm bg-secondary/30 p-3 text-sm"
                 >
-                  <div className="flex justify-between">
+                  <div className="flex justify-between gap-4">
                     <span className="font-medium">
                       {stone.stone_type || stone.stoneType || "Stone"}
                     </span>
@@ -552,65 +655,39 @@ export default function ProductDetail() {
           )}
 
           <div className="space-y-3">
-            <div className="flex gap-3">
-              <Button
-                className="flex-1 gap-2 rounded-none bg-primary py-5 text-xs uppercase tracking-wider hover:bg-primary/90"
-                disabled={!inStock}
-                onClick={() =>
-                  toast({
-                    title: "Added to Cart",
-                    description: `${product.name} has been added to your cart.`,
-                  })
-                }
-              >
-                <ShoppingCart className="h-4 w-4" />
-                {inStock ? "Add to Cart" : "Out of Stock"}
-              </Button>
+  <div className="grid grid-cols-[1fr_auto] gap-3">
+    {whatsappUrl ? (
+      <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+        <Button className="h-12 w-full gap-2 rounded-xl bg-green-700 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-green-800 hover:shadow-md">
+          <MessageCircle className="h-4 w-4" />
+          Enquire on WhatsApp
+        </Button>
+      </a>
+    ) : (
+      <Button
+        disabled
+        className="h-12 w-full gap-2 rounded-xl text-xs font-semibold uppercase tracking-[0.18em]"
+      >
+        <MessageCircle className="h-4 w-4" />
+        WhatsApp Unavailable
+      </Button>
+    )}
 
-              <Button
-                variant="outline"
-                size="icon"
-                className={`h-auto rounded-none border-border px-3 ${
-                  wishlisted ? "border-red-300 text-red-500" : ""
-                }`}
-                onClick={() => {
-                  setWishlisted((value) => !value);
+    <Button
+      type="button"
+      variant="outline"
+      onClick={handleShare}
+      className="h-12 w-12 rounded-xl border-border transition-all hover:-translate-y-0.5 hover:shadow-sm"
+      aria-label="Share product"
+    >
+      <Share2 className="h-4 w-4" />
+    </Button>
+  </div>
 
-                  toast({
-                    title: wishlisted
-                      ? "Removed from Wishlist"
-                      : "Added to Wishlist",
-                    description: product.name,
-                  });
-                }}
-              >
-                <Heart
-                  className={`h-4 w-4 ${wishlisted ? "fill-red-500" : ""}`}
-                />
-              </Button>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleShare}
-                className="h-auto rounded-none px-3"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {whatsappUrl && (
-              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                <Button
-                  variant="outline"
-                  className="w-full gap-2 rounded-none border-green-600 py-5 text-xs uppercase tracking-wider text-green-700 hover:bg-green-50"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Enquire on WhatsApp
-                </Button>
-              </a>
-            )}
-          </div>
+  <p className="text-center text-xs text-muted-foreground">
+    Chat with us for availability, customization, and latest pricing.
+  </p>
+</div>
         </div>
       </div>
 
@@ -632,7 +709,7 @@ export default function ProductDetail() {
             </h2>
 
             <Link
-              to={`/products?category=${product.category}`}
+              to={relatedViewAllUrl}
               className="text-sm uppercase tracking-wider text-primary hover:underline"
             >
               View All

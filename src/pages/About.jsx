@@ -23,48 +23,48 @@ const fadeUp = {
 const journey = [
   {
     year: "01",
-    title: "The First Sketch",
-    text: "Every piece begins with a mood, a memory, and a hand-drawn idea shaped around timeless Indian elegance.",
+    title: "Born from Rivaaz",
+    text: "Every Rivaazé piece begins with the spirit of Indian rituals, memories, celebrations, and the quiet beauty passed down through generations.",
     icon: Sparkles,
   },
   {
     year: "02",
-    title: "Choosing the Metal",
-    text: "We select gold, silver, platinum, and stones with care, balancing purity, weight, durability, and beauty.",
-    icon: Gem,
+    title: "Redefined by Design",
+    text: "Traditional forms are reimagined with a contemporary eye, creating jewellery that feels rooted yet modern, regal yet wearable.",
+    icon: Crown,
   },
   {
     year: "03",
-    title: "Crafted by Hands",
-    text: "Our artisans refine each curve, setting, texture, and detail until the jewellery feels personal and alive.",
+    title: "Crafted in Detail",
+    text: "Kundan, polki, intricate settings, and refined metalwork come together through careful hands and thoughtful finishing.",
     icon: Hammer,
   },
   {
     year: "04",
-    title: "Made for Moments",
-    text: "From everyday grace to bridal celebration, each creation is designed to become part of someone’s story.",
+    title: "Worn as Legacy",
+    text: "Each creation is designed to become part of a woman’s journey — worn today, cherished tomorrow, and passed on with meaning.",
     icon: Heart,
   },
 ];
 
 const values = [
   {
-    title: "Honest Craft",
+    title: "Tradition Reimagined",
     description:
-      "We believe jewellery should be beautiful outside and trustworthy inside — clear details, fair weight, and transparent pricing.",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Timeless Design",
-    description:
-      "Our collections blend traditional Indian artistry with refined modern silhouettes that stay relevant for years.",
+      "At Rivaazé, tradition is not simply followed. It is studied, respected, and reinterpreted for women who honour their roots while shaping their own story.",
     icon: Crown,
   },
   {
-    title: "Personal Meaning",
+    title: "Craft with Emotion",
     description:
-      "A piece of jewellery is rarely just an accessory. It carries emotion, identity, celebration, and memory.",
+      "Every detail carries intention — from regal motifs and stonework to the way a piece feels when worn during life’s most meaningful moments.",
     icon: Heart,
+  },
+  {
+    title: "Trust in Every Detail",
+    description:
+      "Jewellery should feel beautiful and honest. We value clarity in materials, craftsmanship, finish, and the story behind every creation.",
+    icon: ShieldCheck,
   },
 ];
 
@@ -89,19 +89,28 @@ export default function About() {
             animate="visible"
             transition={{ duration: 0.6 }}
           >
-            <Badge className="mb-5 bg-primary/90 text-primary hover:bg-primary/50 h-6">
-              The House of Riwaze Story
+            <Badge className="mb-5 h-6 bg-primary/90 text-primary hover:bg-primary/50">
+              The Rivaazé Story
             </Badge>
 
             <h1 className="max-w-3xl font-heading text-4xl font-semibold leading-tight sm:text-6xl">
-              Jewellery crafted like memory, worn like art.
+              Tradition reimagined as wearable art.
             </h1>
 
             <p className="mt-6 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
-              House of Riwaze was created for those who see jewellery as more
-              than ornament. Every piece is a quiet expression of tradition,
-              emotion, and craftsmanship — made to become part of life’s most
-              meaningful moments.
+              Rivaazé is born from tradition, redefined by design. Inspired by
+              age-old Indian <span className="italic">rivaaz</span> — rituals,
+              memories, and celebrations — and shaped with a contemporary soul,
+              the brand celebrates jewellery as a symbol of heritage, emotion,
+              and individuality.
+            </p>
+
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
+              Each Rivaazé creation blends traditional craftsmanship with modern
+              aesthetics, creating pieces that feel timeless yet relevant.
+              Designed for women who honour their roots while embracing their
+              own journey, Rivaazé jewellery tells stories meant to be worn,
+              cherished, and passed on.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -111,12 +120,6 @@ export default function About() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-
-              {/* <Link to="/rates">
-                <Button variant="outline" className="rounded-full px-6">
-                  View Metal Rates
-                </Button>
-              </Link> */}
             </div>
           </motion.div>
 
@@ -135,14 +138,14 @@ export default function About() {
             </div>
 
             <div className="absolute -bottom-5 -left-2 hidden rounded-3xl border border-border bg-card/95 p-5 shadow-lg backdrop-blur sm:block">
-              <p className="font-heading text-3xl font-semibold">Everyday</p>
+              <p className="font-heading text-3xl font-semibold">Rivaazé</p>
               <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                Luxury with soul
+                Heritage with a modern soul
               </p>
             </div>
 
             <div className="absolute -right-2 top-10 hidden rounded-full border border-border bg-background/90 px-4 py-2 text-xs uppercase tracking-widest text-muted-foreground shadow-sm backdrop-blur sm:block">
-              handcrafted detail
+              tradition reimagined
             </div>
           </motion.div>
         </div>
@@ -155,14 +158,19 @@ export default function About() {
           </p>
 
           <h2 className="mt-3 font-heading text-3xl font-semibold sm:text-5xl">
-            We design pieces that feel inherited before they are owned.
+            At Rivaazé, tradition isn’t followed — it is reimagined.
           </h2>
 
           <p className="mt-4 text-sm leading-7 text-muted-foreground">
-            Our work sits between heritage and modernity. We respect the old
-            language of Indian jewellery — temple motifs, bridal richness,
-            everyday gold, delicate detailing — and reinterpret it for today’s
-            wearer.
+            Our work sits between heritage and modernity. We draw from the old
+            language of Indian jewellery — kundan, polki, regal detailing,
+            bridal richness, and ceremonial elegance — and reinterpret it for
+            today’s woman.
+          </p>
+
+          <p className="mt-4 text-sm leading-7 text-muted-foreground">
+            The result is jewellery that carries the emotion of tradition, but
+            moves with the confidence of contemporary design.
           </p>
         </div>
 
@@ -206,13 +214,13 @@ export default function About() {
             <div className="space-y-3">
               <img
                 src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=900&auto=format&fit=crop"
-                alt="Bangles"
+                alt="Traditional bangles"
                 className="aspect-[3/4] rounded-3xl object-cover"
               />
 
               <img
                 src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=900&auto=format&fit=crop"
-                alt="Ring"
+                alt="Gold ring"
                 className="aspect-square rounded-3xl object-cover"
               />
             </div>
@@ -220,7 +228,7 @@ export default function About() {
             <div className="mt-10 space-y-3">
               <img
                 src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=900&auto=format&fit=crop"
-                alt="Necklace"
+                alt="Gold necklace"
                 className="aspect-square rounded-3xl object-cover"
               />
 
@@ -234,23 +242,24 @@ export default function About() {
 
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-primary">
-              The Atelier
+              The Craft
             </p>
 
             <h2 className="mt-3 font-heading text-3xl font-semibold sm:text-5xl">
-              A quiet place where metal becomes emotion.
+              Where ritual, artistry, and identity meet.
             </h2>
 
             <p className="mt-5 text-sm leading-7 text-muted-foreground">
-              The beauty of a piece is not only in its shine. It is in the
-              patience behind the polish, the balance of weight, the placement
-              of a stone, the curve that rests perfectly against skin, and the
-              detail that only reveals itself when seen closely.
+              The beauty of a Rivaazé piece is not only in its shine. It is in
+              the patience behind the polish, the balance of shape and weight,
+              the placement of every stone, and the detail that reveals itself
+              slowly.
             </p>
 
             <p className="mt-4 text-sm leading-7 text-muted-foreground">
-              That is why we treat every design like a small artwork — created
-              with discipline, finished with care, and made to carry meaning.
+              Kundan, polki, and regal detailing are not used only as decoration.
+              They become a language — one that speaks of celebration,
+              inheritance, femininity, and self-expression.
             </p>
           </div>
         </div>
@@ -263,11 +272,12 @@ export default function About() {
           </p>
 
           <h2 className="mt-3 font-heading text-3xl font-semibold sm:text-5xl">
-            From imagination to heirloom
+            From rivaaz to remembrance
           </h2>
 
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-muted-foreground">
-            The journey of every piece is slow, deliberate, and deeply human.
+            Every piece begins with tradition, passes through design, and
+            becomes part of a personal story.
           </p>
         </div>
 
@@ -327,13 +337,18 @@ export default function About() {
               </Badge>
 
               <h2 className="font-heading text-3xl font-semibold sm:text-5xl">
-                Jewellery that respects your trust.
+                Jewellery that honours roots and celebrates individuality.
               </h2>
 
               <p className="mt-5 text-sm leading-7 text-muted-foreground">
-                We believe luxury should feel clear, not confusing. From purity
-                and weight to making charges and final price, House of Riwaze is
-                built around transparency, craftsmanship, and lasting value.
+                Rivaazé is for women who carry tradition with pride, but never
+                lose their own voice. Every creation is designed to feel
+                meaningful, personal, and timeless — a piece of heritage shaped
+                for the present.
+              </p>
+
+              <p className="mt-4 text-sm leading-7 text-muted-foreground">
+                At Rivaazé, jewellery is not only worn. It is remembered.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -343,12 +358,6 @@ export default function About() {
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
-
-                {/* <Link to="/rates">
-                  <Button variant="outline" className="rounded-full px-6">
-                    Check Today&apos;s Rates
-                  </Button>
-                </Link> */}
               </div>
             </div>
 

@@ -1,20 +1,30 @@
+import { clearAdminSession, getAdminAuthHeaders } from "@/lib/adminAuth";
+
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5185";
 
 function buildUrl(path) {
   return `${API_BASE_URL.replace(/\/$/, "")}${path}`;
 }
 
 async function request(path, options = {}) {
+  const isAdminRequest = path.startsWith("/api/admin");
+  const headers = {
+    "Content-Type": "application/json",
+    ...(isAdminRequest ? getAdminAuthHeaders() : {}),
+    ...(options.headers || {}),
+  };
+
   const response = await fetch(buildUrl(path), {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
     ...options,
+    headers,
   });
 
   if (!response.ok) {
+    if (response.status === 401 && isAdminRequest) {
+      // clearAdminSession();
+    }
+
     let message = "API request failed";
 
     try {

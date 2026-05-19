@@ -6,10 +6,12 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { toast } from "@/components/ui/use-toast";
+import { isAdminAuthenticated } from "@/lib/adminAuth";
 
 export default function Rates() {
   const { rates, isLoading, isRefreshingLive, refreshLiveRates } =
     useMetalRates();
+  const canRefreshLiveRates = isAdminAuthenticated();
   const fmt = (v) => `₹${v?.toLocaleString("en-IN")}`;
 
   const handleRefreshRates = async () => {
@@ -112,19 +114,21 @@ export default function Rates() {
         ))}
       </div>
 
-      <Button
-        variant="outline"
-        onClick={handleRefreshRates}
-        disabled={isLoading || isRefreshingLive}
-        className="gap-2"
-      >
-        <RefreshCw
-          className={`w-4 h-4 ${
-            isLoading || isRefreshingLive ? "animate-spin" : ""
-          }`}
-        />
-        Refresh Live Rates
-      </Button>
+      {canRefreshLiveRates && (
+        <Button
+          variant="outline"
+          onClick={handleRefreshRates}
+          disabled={isLoading || isRefreshingLive}
+          className="gap-2"
+        >
+          <RefreshCw
+            className={`w-4 h-4 ${
+              isLoading || isRefreshingLive ? "animate-spin" : ""
+            }`}
+          />
+          Refresh Live Rates
+        </Button>
+      )}
       
       <div className="mt-12 text-center text-xs text-muted-foreground max-w-md mx-auto">
         <p className="font-medium mb-1">Disclaimer</p>

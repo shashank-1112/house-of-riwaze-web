@@ -13,11 +13,13 @@ import Rates from "@/pages/Rates";
 
 // Admin Layout + Pages
 import AdminLayout from "@/components/admin/AdminLayout";
+import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
 import Dashboard from "@/pages/admin/Dashboard";
 import Inventory from "@/pages/admin/Inventory";
 import ProductForm from "@/pages/admin/ProductForm";
 import Reports from "@/pages/admin/Reports";
 import AdminSettings from "@/pages/admin/AdminSettings";
+import AdminLogin from "@/pages/admin/Login";
 
 function App() {
   return (
@@ -38,8 +40,17 @@ function App() {
             <Route path="/rates" element={<Rates />} />
           </Route>
 
+          <Route path="/admin/login" element={<AdminLogin />} />
+
           {/* Admin Panel */}
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route
+            path="/admin"
+            element={
+              <AdminAuthGuard>
+                <AdminLayout />
+              </AdminAuthGuard>
+            }
+          >
             <Route index element={<Dashboard />} />
             <Route path="inventory" element={<Inventory />} />
             <Route path="inventory/add" element={<ProductForm />} />

@@ -4,6 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { productApi } from "@/api/productApi";
+import { clearAdminSession } from "@/lib/adminAuth";
+import { queryClientInstance } from "@/lib/query-client";
+import { useToast } from "@/components/ui/use-toast";
 
 import {
   LayoutDashboard,
@@ -52,6 +55,7 @@ function isNavItemActive(pathname, itemPath) {
 export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const { settings } = useStoreSettings();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -85,8 +89,13 @@ export default function AdminLayout() {
   });
 
   const handleLogout = () => {
-    // Temporary until admin auth is added.
-    navigate("/");
+    clearAdminSession();
+    queryClientInstance.clear();
+    toast({
+      title: "Logged out",
+      description: "Your admin session has ended.",
+    });
+    navigate("/admin/login", { replace: true });
   };
 
   return (

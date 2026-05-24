@@ -54,18 +54,13 @@ function normalizeProduct(product) {
       getProductValue(product, "jewellery_type", "jewelleryType", "") ||
       getProductValue(product, "jewelry_type", "jewelryType", "None"),
 
-    metal_color: getProductValue(
-      product,
-      "metal_color",
-      "metalColor",
-      "None"
-    ),
+    metal_color: getProductValue(product, "metal_color", "metalColor", "None"),
 
     accessory_type: getProductValue(
       product,
       "accessory_type",
       "accessoryType",
-      "None"
+      "None",
     ),
 
     purity: product.purity || "",
@@ -77,33 +72,33 @@ function normalizeProduct(product) {
       product,
       "making_charges_type",
       "makingChargesType",
-      "per_gram"
+      "per_gram",
     ),
 
     making_charges: getProductNumber(
       product,
       "making_charges",
       "makingCharges",
-      0
+      0,
     ),
 
     price_override:
       product.price_override === "" || product.price_override === undefined
-        ? product.priceOverride ?? null
+        ? (product.priceOverride ?? null)
         : product.price_override,
 
     stock_quantity: getProductNumber(
       product,
       "stock_quantity",
       "stockQuantity",
-      0
+      0,
     ),
 
     min_stock_threshold: getProductNumber(
       product,
       "min_stock_threshold",
       "minStockThreshold",
-      5
+      5,
     ),
 
     images: Array.isArray(product.images) ? product.images : [],
@@ -120,7 +115,7 @@ function normalizeProduct(product) {
     stone_details: product.stone_details || product.stoneDetails || [],
 
     try_on_enabled: Boolean(
-      product.try_on_enabled ?? product.tryOnEnabled ?? false
+      product.try_on_enabled ?? product.tryOnEnabled ?? false,
     ),
     try_on_type: getProductValue(product, "try_on_type", "tryOnType", "ring"),
     try_on_asset: getProductValue(product, "try_on_asset", "tryOnAsset", ""),
@@ -129,19 +124,19 @@ function normalizeProduct(product) {
       product,
       "try_on_offset_x",
       "tryOnOffsetX",
-      0
+      0,
     ),
     try_on_offset_y: getProductNumber(
       product,
       "try_on_offset_y",
       "tryOnOffsetY",
-      0
+      0,
     ),
     try_on_rotation: getProductNumber(
       product,
       "try_on_rotation",
       "tryOnRotation",
-      0
+      0,
     ),
 
     created_date: getProductValue(product, "created_date", "createdDate", ""),
@@ -358,7 +353,7 @@ export default function ProductDetail() {
   const whatsappUrl = whatsappNumber
     ? `https://wa.me/${String(whatsappNumber).replace(
         /\D/g,
-        ""
+        "",
       )}?text=${encodeURIComponent(whatsappMsg)}`
     : null;
 
@@ -404,7 +399,7 @@ export default function ProductDetail() {
       <div className="grid gap-8 sm:gap-12 md:grid-cols-2">
         <div>
           <div
-            className="relative aspect-square cursor-crosshair overflow-hidden rounded-sm bg-muted"
+            className="relative flex aspect-square cursor-crosshair items-center justify-center overflow-hidden rounded-sm bg-muted"
             onMouseEnter={() => setImageZoom(true)}
             onMouseLeave={() => setImageZoom(false)}
             onMouseMove={handleMouseMove}
@@ -413,7 +408,7 @@ export default function ProductDetail() {
               <img
                 src={images[selectedImage]}
                 alt={product.name}
-                className="h-full w-full object-cover transition-transform duration-300"
+                className="h-full w-full object-contain  transition-transform duration-300"
                 style={
                   imageZoom
                     ? {
@@ -655,39 +650,39 @@ export default function ProductDetail() {
           )}
 
           <div className="space-y-3">
-  <div className="grid grid-cols-[1fr_auto] gap-3">
-    {whatsappUrl ? (
-      <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-        <Button className="h-12 w-full gap-2 rounded-xl bg-green-700 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-green-800 hover:shadow-md">
-          <MessageCircle className="h-4 w-4" />
-          Enquire on WhatsApp
-        </Button>
-      </a>
-    ) : (
-      <Button
-        disabled
-        className="h-12 w-full gap-2 rounded-xl text-xs font-semibold uppercase tracking-[0.18em]"
-      >
-        <MessageCircle className="h-4 w-4" />
-        WhatsApp Unavailable
-      </Button>
-    )}
+            <div className="grid grid-cols-[1fr_auto] gap-3">
+              {whatsappUrl ? (
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  <Button className="h-12 w-full gap-2 rounded-xl bg-green-700 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-green-800 hover:shadow-md">
+                    <MessageCircle className="h-4 w-4" />
+                    Enquire on WhatsApp
+                  </Button>
+                </a>
+              ) : (
+                <Button
+                  disabled
+                  className="h-12 w-full gap-2 rounded-xl text-xs font-semibold uppercase tracking-[0.18em]"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp Unavailable
+                </Button>
+              )}
 
-    <Button
-      type="button"
-      variant="outline"
-      onClick={handleShare}
-      className="h-12 w-12 rounded-xl border-border transition-all hover:-translate-y-0.5 hover:shadow-sm"
-      aria-label="Share product"
-    >
-      <Share2 className="h-4 w-4" />
-    </Button>
-  </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleShare}
+                className="h-12 w-12 rounded-xl border-border transition-all hover:-translate-y-0.5 hover:shadow-sm"
+                aria-label="Share product"
+              >
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </div>
 
-  <p className="text-center text-xs text-muted-foreground">
-    Chat with us for availability, customization, and latest pricing.
-  </p>
-</div>
+            <p className="text-center text-xs text-muted-foreground">
+              Chat with us for availability, customization, and latest pricing.
+            </p>
+          </div>
         </div>
       </div>
 

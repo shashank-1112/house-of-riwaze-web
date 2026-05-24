@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { storeSettingsApi } from "@/api/storeSettingsApi";
 
 const DEFAULT_SETTINGS = {
-  store_name: "House of Riwaze",
+  store_name: "Rivaazé",
   tagline: "Timeless Elegance, Crafted for You",
   whatsapp: "9146567388",
   email: "ssp@gmail.com",

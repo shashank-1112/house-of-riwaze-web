@@ -2,7 +2,7 @@ const STORAGE_KEY = "zarina-jewels-settings";
 
 const defaultSettings = {
   id: "local-settings",
-  store_name: "House of Riwaze",
+  store_name: "Rivaazé",
   tagline: "Timeless Elegance, Crafted for You",
   logo_url: "",
   address: "",

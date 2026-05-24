@@ -24,7 +24,7 @@ const CATEGORIES = [
 ];
 
 const DEFAULT_SETTINGS = {
-  store_name: "House of Riwaze",
+  store_name: "Rivaazé",
   tagline: "Timeless Elegance, Crafted for You",
   logo_url:
     "https://raw.githubusercontent.com/shashank-1112/images/8779686a25f689be3ef63da813eba218637a1da4/favicon.png",
@@ -78,7 +78,7 @@ function normalizeSettings(settings) {
 
 function toBackendSettings(form) {
   return {
-    storeName: form.store_name || "House of Riwaze",
+    storeName: form.store_name || "Rivaazé",
     tagline: form.tagline || "",
     logoUrl: form.logo_url || "",
     address: form.address || "",

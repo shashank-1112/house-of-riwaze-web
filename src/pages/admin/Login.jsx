@@ -38,7 +38,7 @@ export default function AdminLogin() {
   }, [location.state, searchParams]);
 
   const storeName =
-    settings?.store_name || settings?.storeName || "House of Riwaze";
+    settings?.store_name || settings?.storeName || "Rivaazé";
 
   useEffect(() => {
     if (isAdminAuthenticated()) {

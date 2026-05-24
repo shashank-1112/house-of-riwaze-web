@@ -13,7 +13,7 @@ export default function PublicHeader() {
       <Link to="/" className="brand">
         <span className="brand-mark"><Gem size={22} /></span>
         <span>
-          <strong>House of Riwaze</strong>
+          <strong>Rivaazé</strong>
           <small>Luxury inventory & e-commerce</small>
         </span>
       </Link>

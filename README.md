@@ -1,6 +1,6 @@
-# House of Riwaze React Frontend
+# Rivaazé React Frontend
 
-This is a clean React + Vite recreation of the House of Riwaze prototype structure.
+This is a clean React + Vite recreation of the Rivaazé prototype structure.
 
 ## Run locally
 

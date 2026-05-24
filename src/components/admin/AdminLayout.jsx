@@ -63,7 +63,7 @@ export default function AdminLayout() {
   const pathname = normalizePath(location.pathname);
 
   const storeName =
-    settings?.store_name || settings?.storeName || "House of Riwaze";
+    settings?.store_name || settings?.storeName || "Rivaazé";
 
   const { data: lowStockCount = 0 } = useQuery({
     queryKey: ["low-stock-count"],
